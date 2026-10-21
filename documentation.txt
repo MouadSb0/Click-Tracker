@@ -1,0 +1,144 @@
+=> spring boot build in top of the spring framework.
+
+1. Le conteneur Spring vs. le conteneur EJB :
+En JEE, vous comptez sur un conteneur EJB ou un serveur d'application lourd pour gérer vos beans. Dans Spring, le conteneur IoC (Inversion of Control) est une usine à objets légère et simple. Il lit un fichier XML (applicationContext.xml ou dispatcher-servlet.xml), instancie vos classes en tant que "beans" et câble leurs dépendances ensemble. Vous remplacez essentiellement les EJB @Stateless par de simples classes Java configurées en XML.
+
+2. DispatcherServlet vs FacesServlet ou JAX-RS
+Spring MVC utilise un modèle de contrôleur frontal (front controller). Tout comme vous mappez FacesServlet dans web.xml pour JSF, vous mappez le DispatcherServlet de Spring sur le pattern d'URL /. Ce servlet est le point d'entrée de toutes les requêtes HTTP et les délègue aux méthodes de votre @Controller.
+
+3. Jakarta EE 9+ (le passage de "javax" à "jakarta")
+C'est un changement critique dont vous devez être conscient. Puisque vous utilisez Spring 6 et Tomcat 10, vous devez utiliser l'espace de noms jakarta.*, et non javax.*. Spring 6 est construit sur Jakarta EE 9+, et les deux ne sont pas compatibles. Lorsque vous définissez un servlet dans web.xml, vous devez utiliser le schéma et les versions jakarta corrects.
+
+4. Injection de dépendances : Constructeur vs Setter
+Le brief exige une injection basée sur XML. Vous définirez des beans dans applicationContext.xml et les injecterez dans vos classes @Controller et @Service. Vous pouvez injecter via <property> (injection par setter) ou <constructor-arg> (injection par constructeur). L'injection par constructeur est généralement préférée pour les dépendances obligatoires, car elle garantit que l'objet est toujours dans un état valide.
+
+5. Beans Singleton & Sécurité des threads (Crucial pour la règle "Aucun clic perdu")
+Par défaut, les beans Spring (votre @Service, @Repository, @Controller) sont des singletons — une seule instance est partagée entre tous les threads des requêtes HTTP. Si vous utilisez une simple List ou un int comme champ pour le stockage, les clics simultanés provoqueront une corruption des données ou des pertes de mises à jour. Vous devez utiliser des structures sûres pour les threads (thread-safe) comme ConcurrentHashMap et AtomicInteger pour garantir qu'aucun clic n'est perdu lors d'accès concurrents.
+
+=>  What is Mockito?
+Mockito is a tool that helps you write cleaner, more focused unit tests. Its main job is to create mock objects—simulated versions of real dependencies (like database connections, web services, or other complex classes) that your code interacts with.
+
+=> What is Hamcrest?
+Hamcrest is a library of matchers that allow you to define "match" rules declaratively. Instead of writing complex, brittle assert statements, you can use Hamcrest to express the intent of your test clearly.
+
+
+=> Le cycle de vie d’une requête HTTP :
+
+Client
+  │
+  ├─ 1. Prépare la requête (URL, méthode, en-têtes, corps)
+  ├─ 2. Résolution DNS
+  ├─ 3. Connexion TCP (+ TLS si HTTPS)
+  ├─ 4. Envoie la requête HTTP
+  │
+  ▼
+Serveur
+  │
+  ├─ 5. Reçoit et traite la requête
+  ├─ 6. Prépare la réponse
+  │
+  ▼
+Client
+  │
+  ├─ 7. Reçoit et traite la réponse
+  └─ 8. Ferme ou réutilise la connexion
+
+========================================================================================================================================================
+=> Les Etapes :
+
+1 - web.xml : Enregistrez le DispatcherServlet et mappez-le sur /. Assurez-vous d'utiliser le schéma jakarta.
+
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+         https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
+    <!-- ... mapping du servlet pour DispatcherServlet ... -->
+</web-app>
+
+2 - dispatcher-servlet.xml (ou applicationContext.xml) : Activez le MVC basé sur les annotations et définissez vos beans.
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="...">
+    <mvc:annotation-driven /> <!-- Active @RequestMapping, @RestController, etc. -->
+    
+    <!-- Définitions des beans -->
+    <bean id="lienRepository" class="com.clicktrack.repository.LienRepositoryImpl" />
+    <bean id="lienService" class="com.clicktrack.service.LienServiceImpl">
+        <constructor-arg ref="lienRepository" /> <!-- Injection par constructeur -->
+    </bean>
+    <bean id="lienController" class="com.clicktrack.controller.LienController">
+        <constructor-arg ref="lienService" />
+    </bean>
+</beans>
+
+=====================================================================
+
+=> Étape 3 : Modèle de domaine & Dépôts (Repositories)
+
+-> Créez vos POJOs (Publisher, Lien, Offre enum). Pour les dépôts, le brief impose un stockage en mémoire en utilisant ArrayList. Cependant, pour respecter la règle "aucun clic ne doit être perdu lors de clics simultanés", n'utilisez pas une simple ArrayList pour les écritures. Utilisez une structure thread-safe.
+
+- Dépôts : Créez des interfaces (par ex., PublisherRepository, LienRepository) et des implémentations. Stockez les données dans une ConcurrentHashMap ou une CopyOnWriteArrayList pour gérer les écritures concurrentes en toute sécurité. Utilisez AtomicInteger pour les compteurs de clics afin d'éviter les pertes de mises à jour.
+- Initialisation des données : Le bonus demande un bean DataInitializer. Implémentez l'interface InitializingBean ou utilisez un init-method dans la définition de votre bean XML. Cette méthode remplira vos dépôts avec des publishers de test au démarrage.
+
+
+
+==========================================================
+=> Étape 4 : Couche Service
+
+Créez un LienService et un PublisherService. C'est ici que réside la logique métier. Par exemple, incrementClick(Long lienId) doit récupérer le lien et incrémenter son compteur de manière atomique. Le service doit être injecté dans vos contrôleurs via XML.
+
+==========================================================
+=> Étape 5 : Couche Contrôleur
+
+Utilisez @RestController (ou @Controller avec @ResponseBody) sur vos classes. Le brief autorise les annotations de mapping (@GetMapping, @PathVariable) mais exige que les définitions de beans soient dans le XML.
+
+GET /api/publishers : Retourne la liste de tous les publishers.
+
+POST /api/publishers/{id}/liens : Crée un nouveau lien de tracking pour un publisher.
+
+GET /api/publishers/{id}/liens : Liste les liens d'un publisher avec leur nombre de clics.
+
+GET /api/publishers/{id}/offres : Liste les offres d'un publisher avec le nombre de clics agrégé (somme des clics de tous les liens par offre).
+
+GET /t/{id} : Le point de terminaison de tracking principal. Cette méthode doit :
+
+Incrémenter de manière atomique le compteur de clics du lien.
+Retourner une réponse JSON avec urlRedirection, publisher (nom complet), offre (nom de l'offre) et clicks (nouveau compteur).
+(Pour le bonus, au lieu de retourner du JSON, utilisez RedirectView ou HttpServletResponse.sendRedirect() pour rediriger l'utilisateur vers l'URL de destination.)
+
+==================================================================================================
+=> Étape 6 : Concurrence & Tests
+
+Écrivez un test JUnit qui simule plusieurs threads appelant GET /t/{id} de manière concurrente. Vérifiez que le nombre final de clics est égal au nombre de threads. Cela valide que votre utilisation de AtomicInteger et des collections thread-safe est correcte.
+
+
+==================================================================================================
+=> 📚 Feuille de route d'apprentissage (Ce qu'il faut étudier ensuite) :
+
+Pour consolider vos connaissances de Spring, concentrez-vous sur ces domaines :
+
+Conteneur IoC Spring : Comprenez BeanFactory vs ApplicationContext, les portées (scopes) des beans (singleton vs prototype) et le cycle de vie des beans (en particulier init-method).
+
+Flux de requête Spring MVC : Suivez une requête depuis DispatcherServlet -> HandlerMapping -> Controller -> ViewResolver (ou HttpMessageConverter pour le JSON).
+
+Concurrence Java : Maîtrisez AtomicInteger, ConcurrentHashMap et le package java.util.concurrent. C'est non négociable pour l'exigence "aucun clic perdu".
+
+Migration vers Jakarta EE : Renseignez-vous sur le changement de nom des packages javax à jakarta pour éviter les conflits de dépendances.
+
+
+
+===============================================================================================================================================
+=> Using AtomicInteger as the example:
+
+AtomicInteger counter = new AtomicInteger(0);
+
+counter.get();                    // read
+counter.set(5);                   // write
+counter.incrementAndGet();        // ++counter, returns new value
+counter.getAndIncrement();        // counter++, returns old value
+counter.addAndGet(10);            // counter += 10
+counter.compareAndSet(10, 20);    // if current == 10, set to 20; returns boolean
+counter.updateAndGet(x -> x * 2); // Java 8: functional update
