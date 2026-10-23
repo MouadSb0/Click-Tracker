@@ -22,6 +22,7 @@
             <version>${spring.version}</version>
         </dependency>
         <dependency>
+        <!-- le spring context est fournit le conteneur d'invertion de controle, c'est le point d'entrée pour utiliser les fonctionnalités essentielles de Spring. -->
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
             <version>${spring.version}</version>

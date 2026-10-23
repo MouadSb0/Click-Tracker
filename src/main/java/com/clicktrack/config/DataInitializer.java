@@ -32,7 +32,7 @@ public class DataInitializer {
      * Charge les publishers de test et leurs liens initiaux pour permettre la validation fonctionnelle et les tests.
      */
     public void init() {
-        // Initialisation des trois publishers de démonstration (Alami, Bennani, El Idrissi)
+
         Publisher p1 = new Publisher(1L, "Alami", "Sara", "sara.alami@example.com", Categorie.INFLUENCEUR);
         Publisher p2 = new Publisher(2L, "Bennani", "Youssef", "youssef.bennani@example.com", Categorie.YOUTUBEUR);
         Publisher p3 = new Publisher(3L, "El Idrissi", "Imane", "imane.elidrissi@example.com", Categorie.BLOGEUR);
@@ -41,7 +41,7 @@ public class DataInitializer {
         publisherRepository.save(p2);
         publisherRepository.save(p3);
 
-        // Initialisation des liens associés au publisher 1 (Sara Alami) avec leurs clics initiaux
+
         Lien lien1 = new Lien(1L, "Casque audio X200", "https://www.exemple.com/casque-audio", 10, 1L);
         Lien lien2 = new Lien(2L, "Montre connectée Z5", "https://www.exemple.com/montre-z5", 2, 1L);
 

@@ -1,10 +1,10 @@
 => spring boot build in top of the spring framework.
 
 1. Le conteneur Spring vs. le conteneur EJB :
-En JEE, vous comptez sur un conteneur EJB ou un serveur d'application lourd pour gérer vos beans. Dans Spring, le conteneur IoC (Inversion of Control) est une usine à objets légère et simple. Il lit un fichier XML (applicationContext.xml ou dispatcher-servlet.xml), instancie vos classes en tant que "beans" et câble leurs dépendances ensemble. Vous remplacez essentiellement les EJB @Stateless par de simples classes Java configurées en XML.
+En JEE, vous comptez sur un conteneur EJB ou un serveur d'application lourd pour gérer vos beans. Dans Spring, le conteneur IoC (Inversion of Control) est une usine à objets légère (خَفِيف) et simple. Il lit un fichier XML (applicationContext.xml ou dispatcher-servlet.xml), instancie vos classes en tant que "beans" et câble leurs dépendances ensemble. Vous remplacez essentiellement les EJB @Stateless par de simples classes Java configurées en XML.
 
 2. DispatcherServlet vs FacesServlet ou JAX-RS
-Spring MVC utilise un modèle de contrôleur frontal (front controller). Tout comme vous mappez FacesServlet dans web.xml pour JSF, vous mappez le DispatcherServlet de Spring sur le pattern d'URL /. Ce servlet est le point d'entrée de toutes les requêtes HTTP et les délègue aux méthodes de votre @Controller.
+Spring MVC utilise un modèle de contrôleur frontal (front controller). vous mappez le DispatcherServlet de Spring sur le pattern d'URL /. Ce servlet est le point d'entrée de toutes les requêtes HTTP et les délègue aux méthodes de votre @Controller.
 
 3. Jakarta EE 9+ (le passage de "javax" à "jakarta")
 C'est un changement critique dont vous devez être conscient. Puisque vous utilisez Spring 6 et Tomcat 10, vous devez utiliser l'espace de noms jakarta.*, et non javax.*. Spring 6 est construit sur Jakarta EE 9+, et les deux ne sont pas compatibles. Lorsque vous définissez un servlet dans web.xml, vous devez utiliser le schéma et les versions jakarta corrects.
@@ -21,6 +21,10 @@ Mockito is a tool that helps you write cleaner, more focused unit tests. Its mai
 => What is Hamcrest?
 Hamcrest is a library of matchers that allow you to define "match" rules declaratively. Instead of writing complex, brittle assert statements, you can use Hamcrest to express the intent of your test clearly.
 
+
+=> Maven ne télécharge pas seulement le jar demandé : il télécharge aussi ses dépendances transitives. Par exemple, déclarer spring-context amène automatiquement spring-core, spring-beans, spring-aop, spring-expression, etc.
+
+=> Votre formulation est correcte dans l'esprit : Maven est responsable de récupérer les artefacts (souvent des .jar) nécessaires à partir des dépôts, en tenant compte des dépendances transitives. La seule correction est que la dépendance est la déclaration, et le fichier téléchargé est l'artefact — généralement un .jar.
 
 => Le cycle de vie d’une requête HTTP :
 

@@ -7,7 +7,6 @@
     <bean id="publisherRepository" class="com.clicktrack.repository.PublisherRepositoryImpl" />
     <bean id="lienRepository" class="com.clicktrack.repository.LienRepositoryImpl" />
 
-    <!-- Déclaration de la couche métier (Services) avec injection de dépendances par constructeur -->
     <bean id="publisherService" class="com.clicktrack.service.PublisherServiceImpl">
         <constructor-arg ref="publisherRepository" />
     </bean>

@@ -1,0 +1,10 @@
+spring boot built on top of the spring framework.
+
+=> le conteneur spring IOC vs conteneur EJB/CDI :
+le conteneur speing (Inversion of control) est une usine à objets légère et simple. il lit un fichier XML (applicationContext.xml ou dispatch) , intancie vos classes en tant que "beans" et cable leurs dépendances ensemble.
+
+=> DispatcherServlet :
+spring MVC utilise un controleur frontal.
+
+=> injection de dépendances :
+le brief exige une injection basée sur XML.
